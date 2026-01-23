@@ -36,7 +36,7 @@ export const LoadingSpinner = ({
 // Full page loading spinner
 export const LoadingPage = ({ text = "Loading..." }: { text?: string }) => {
 	return (
-		<div className="flex items-center justify-center min-h-[400px]">
+		<div className="flex items-center justify-center min-h-100">
 			<LoadingSpinner size="lg" text={text} />
 		</div>
 	);
