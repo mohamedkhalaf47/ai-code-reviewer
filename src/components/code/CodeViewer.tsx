@@ -13,7 +13,6 @@ interface CodeViewerProps {
 	commentThreads: CommentThread[];
 	onAddComment?: (lineNumber: number, content: string) => void;
 	onAddReply?: (threadId: number, content: string) => void;
-	onEditComment?: (commentId: number, content: string) => void;
 	onDeleteComment?: (commentId: number) => void;
 	onResolveThread?: (threadId: number) => void;
 	onUnresolveThread?: (threadId: number) => void;
@@ -25,7 +24,6 @@ const CodeViewer = ({
 	commentThreads,
 	onAddComment,
 	onAddReply,
-	onEditComment,
 	onDeleteComment,
 	onResolveThread,
 	onUnresolveThread,
@@ -178,9 +176,6 @@ const CodeViewer = ({
 											thread={thread}
 											onAddReply={(threadId: number, content: string) =>
 												onAddReply?.(threadId, content)
-											}
-											onEditComment={(id: number, content: string) =>
-												onEditComment?.(id, content)
 											}
 											onDeleteComment={(id: number) => onDeleteComment?.(id)}
 											onResolveThread={(id: number) => onResolveThread?.(id)}

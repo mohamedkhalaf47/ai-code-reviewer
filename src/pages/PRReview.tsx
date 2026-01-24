@@ -1,36 +1,44 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { usePullRequest } from "@/hooks/usePullRequests";
+import { useComments } from "@/hooks/useComments";
+import { useTheme } from "@/hooks/useTheme";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
 import PRHeader from "@/components/pullRequest/PRHeader";
 import PRStats from "@/components/pullRequest/PRStats";
 import FileTree from "@/components/code/FileTree";
-import CodeViewer from "@/components/code/CodeViewer";
+import EnhancedCodeViewer from "@/components/editor/EnhancedCodeViewer";
 import AIInsightsPanel from "@/components/AI/AIInsightsPanel";
+import { CommentThread as CommentThreadComponent } from "@/components/comments/CommentThread";
 import { type FileChange } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockCollaboratingUsers } from "@/mocks/data/users";
-import { useParams } from "react-router-dom";
-import { useComments } from "@/hooks/useComments";
+import { Sparkles, MessageSquare, ArrowLeft } from "lucide-react";
 
 const PRReview = () => {
 	const { number } = useParams<{ number: string }>();
 	const prNumber = parseInt(number || "0", 10);
+	const { isDarkMode } = useTheme();
 
-	// In real app, we'd fetch by number. For now, we'll use ID
 	const { pullRequest, loading, error } = usePullRequest(prNumber);
-
 	const [selectedFile, setSelectedFile] = useState<FileChange | null>(null);
-	const [mobileView, setMobileView] = useState<"files" | "code" | "insights">(
-		"code",
-	);
+	const [showComments, setShowComments] = useState(false);
+	const [showMobileComments, setShowMobileComments] = useState(false);
 
 	// Comments management
 	const {
 		threads,
 		fetchThreads,
 		addComment,
-		updateComment,
 		deleteComment,
 		resolveThread,
 		unresolveThread,
@@ -60,14 +68,6 @@ const PRReview = () => {
 		);
 	}
 
-	if (!selectedFile && pullRequest.files.length > 0) {
-		setSelectedFile(pullRequest.files[0]);
-	}
-
-	const handleAddComment = async (lineNumber: number, content: string) => {
-		await addComment(lineNumber, content);
-	};
-
 	const handleAddReply = async (threadId: number, content: string) => {
 		const thread = threads.find((t) => t.id === threadId);
 		if (thread) {
@@ -75,21 +75,42 @@ const PRReview = () => {
 		}
 	};
 
+	// Handlers
+	const handleFileSelect = (file: FileChange) => {
+		setSelectedFile(file);
+		setShowComments(false);
+	};
+
+	const handleCloseEditor = () => {
+		setSelectedFile(null);
+		setShowComments(false);
+	};
+
+	// ============================================================================
+	// LAYOUT STRUCTURE
+	// ============================================================================
+	// This is the ONLY place where layout is controlled.
+	// - Desktop (lg+): Two-column (no file) or three-column (with file)
+	// - Mobile (<lg): Tabs (no file) or full-screen editor with floating buttons
+	// ============================================================================
+
 	return (
-		<div className="flex flex-col">
+		<div className="flex h-screen flex-col bg-white dark:bg-background">
+			{/* Header */}
 			<PRHeader pr={pullRequest} activeUsers={mockCollaboratingUsers} />
 
-			<div className="flex-1 flex flex-col overflow-hidden">
-				<div className="p-3 sm:p-4 border-b dark:border-border bg-slate-50 dark:bg-background">
+			{/* Main Content Area */}
+			<div className="flex min-h-0 flex-1 flex-col">
+				{/* PR Stats Bar */}
+				<div className="border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-border dark:bg-background sm:px-4 sm:py-3">
 					<PRStats pr={pullRequest} />
 				</div>
 
-				<Tabs
-					defaultValue="files"
-					className="flex-1 flex flex-col overflow-hidden"
-				>
-					<div className="px-3 sm:px-4 border-b dark:border-border bg-white dark:bg-card overflow-x-auto">
-						<TabsList className="h-auto p-0 bg-transparent">
+				{/* Content Tabs - SINGLE OVERFLOW OWNER */}
+				<Tabs defaultValue="files" className="flex min-h-0 flex-1 flex-col">
+					{/* Tabs Navigation */}
+					<div className="border-b border-slate-200 bg-white px-3 dark:border-border dark:bg-card sm:px-4">
+						<TabsList className="bg-transparent p-0">
 							<TabsTrigger value="files" className="text-xs sm:text-sm">
 								Files Changed
 							</TabsTrigger>
@@ -101,136 +122,247 @@ const PRReview = () => {
 							</TabsTrigger>
 						</TabsList>
 					</div>
-
-					<TabsContent value="files" className="flex-1 m-0 overflow-hidden">
-						{/* Desktop Layout */}
-						<div className="hidden lg:grid h-full grid-cols-[270px_1fr_330px]">
-							<FileTree
-								files={pullRequest.files}
-								selectedFile={selectedFile}
-								onFileSelect={setSelectedFile}
-							/>
+					{/* ========== FILES TAB ========== */}
+					<TabsContent value="files" className="m-0 min-h-0 flex-1">
+						{/* DESKTOP: lg+ breakpoint */}
+						<div className="hidden min-h-0 flex-1 lg:flex flex-col">
 							{selectedFile ? (
-								<CodeViewer
-									file={selectedFile}
-									commentThreads={threads}
-									onAddComment={handleAddComment}
-									onAddReply={handleAddReply}
-									onEditComment={updateComment}
-									onDeleteComment={deleteComment}
-									onResolveThread={resolveThread}
-									onUnresolveThread={unresolveThread}
-									onReact={addReaction}
-								/>
+								/* Full-Width Editor + Floating Comments Button */
+								<div className="relative flex min-h-0 flex-1 flex-col">
+									{/* Close Button Bar + Comments Button */}
+									<div className="border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-border dark:bg-muted/30 sm:px-4 flex items-center justify-between">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={handleCloseEditor}
+											className="h-7 text-xs sm:text-sm"
+										>
+											<ArrowLeft className="mr-1 h-3.5 w-3.5" />
+											Back to Files
+										</Button>
+										<Button
+											onClick={() => setShowComments(true)}
+											size="lg"
+											title="Open comments"
+										>
+											<MessageSquare className="mr-2 h-5 w-5" />
+											Comments ({threads.length})
+										</Button>
+									</div>
+
+									{/* Editor: Full Width */}
+									<div className="min-h-0 flex-1">
+										<EnhancedCodeViewer
+											file={selectedFile}
+											isDarkMode={isDarkMode}
+										/>
+									</div>
+
+									{/* Comments Drawer - right-side Sheet */}
+									<Sheet open={showComments} onOpenChange={setShowComments}>
+										<SheetContent
+											side="right"
+											className="flex w-full flex-col p-0 sm:max-w-md"
+										>
+											<SheetHeader className="border-b border-slate-200 px-4 py-3 dark:border-border">
+												<SheetTitle className="flex items-center gap-2">
+													<MessageSquare className="h-5 w-5" />
+													Comments ({threads.length})
+												</SheetTitle>
+											</SheetHeader>
+											<ScrollArea className="min-h-0 flex-1">
+												<div className="space-y-3 p-4">
+													{threads.length > 0 ? (
+														threads.map((thread) => (
+															<CommentThreadComponent
+																key={thread.id}
+																thread={thread}
+																onAddReply={handleAddReply}
+																onDeleteComment={deleteComment}
+																onResolveThread={resolveThread}
+																onUnresolveThread={unresolveThread}
+																onReact={addReaction}
+															/>
+														))
+													) : (
+														<div className="py-8 text-center">
+															<MessageSquare className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-muted" />
+															<p className="text-sm text-slate-500 dark:text-muted-foreground">
+																No comments yet
+															</p>
+														</div>
+													)}
+												</div>
+											</ScrollArea>
+										</SheetContent>
+									</Sheet>
+								</div>
 							) : (
-								<div className="flex items-center justify-center text-slate-500 dark:text-muted-foreground">
-									Select a file to view changes
+								/* 2-Column Layout: File Tree | AI Insights */
+								<div className="flex min-h-0 w-full">
+									{/* Left: File Tree */}
+									<div className="min-h-0 flex-1 border-r border-slate-200 dark:border-border">
+										<FileTree
+											files={pullRequest.files}
+											selectedFile={selectedFile}
+											onFileSelect={handleFileSelect}
+										/>
+									</div>
+
+									{/* Right: AI Insights */}
+									<div className="flex min-h-0 w-96 min-w-0 flex-col">
+										<AIInsightsPanel
+											insights={pullRequest.aiInsights}
+											summary={pullRequest.aiSummary}
+										/>
+									</div>
 								</div>
 							)}
-							<AIInsightsPanel
-								insights={pullRequest.aiInsights.filter(
-									(i) => !selectedFile || i.fileId === selectedFile.id,
-								)}
-								summary={pullRequest.aiSummary}
-							/>
 						</div>
 
-						{/* Mobile Layout */}
-						<div className="lg:hidden h-full flex flex-col">
-							<div className="border-b dark:border-border bg-white dark:bg-card">
-								<div className="flex">
-									<button
-										onClick={() => setMobileView("files")}
-										className={`flex-1 px-3 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-											mobileView === "files"
-												? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-												: "border-transparent text-slate-600 dark:text-muted-foreground"
-										}`}
-									>
-										Files ({pullRequest.files.length})
-									</button>
-									<button
-										onClick={() => setMobileView("code")}
-										className={`flex-1 px-3 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-											mobileView === "code"
-												? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-												: "border-transparent text-slate-600 dark:text-muted-foreground"
-										}`}
-									>
-										Code
-									</button>
-									<button
-										onClick={() => setMobileView("insights")}
-										className={`flex-1 px-3 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-											mobileView === "insights"
-												? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-												: "border-transparent text-slate-600 dark:text-muted-foreground"
-										}`}
-									>
-										AI ({pullRequest.aiInsights.length})
-									</button>
-								</div>
-							</div>
+						{/* MOBILE/TABLET: <lg breakpoint */}
+						<div className="flex min-h-0 flex-1 flex-col lg:hidden">
+							{selectedFile ? (
+								/* Mobile: Full-screen editor + floating button + drawer */
+								<div className="relative flex min-h-0 flex-1 flex-col">
+									{/* Close Button Bar */}
+									<div className="border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-border dark:bg-muted/30">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={handleCloseEditor}
+											className="h-7 text-xs"
+										>
+											<ArrowLeft className="mr-1 h-3.5 w-3.5" />
+											Back
+										</Button>
+									</div>
 
-							<div className="flex-1 overflow-hidden">
-								{mobileView === "files" && (
-									<FileTree
-										files={pullRequest.files}
-										selectedFile={selectedFile}
-										onFileSelect={(file) => {
-											setSelectedFile(file);
-											setMobileView("code");
-										}}
-									/>
-								)}
-								{mobileView === "code" && selectedFile && (
-									<CodeViewer
-										file={selectedFile}
-										commentThreads={threads}
-										onAddComment={handleAddComment}
-										onAddReply={handleAddReply}
-										onEditComment={updateComment}
-										onDeleteComment={deleteComment}
-										onResolveThread={resolveThread}
-										onUnresolveThread={unresolveThread}
-										onReact={addReaction}
-									/>
-								)}
-								{mobileView === "insights" && (
-									<AIInsightsPanel
-										insights={pullRequest.aiInsights.filter(
-											(i) => !selectedFile || i.fileId === selectedFile.id,
-										)}
-										summary={pullRequest.aiSummary}
-									/>
-								)}
-							</div>
+									{/* Editor: Full height, no scroll wrapper */}
+									<div className="min-h-0 flex-1">
+										<EnhancedCodeViewer
+											file={selectedFile}
+											isDarkMode={isDarkMode}
+										/>
+									</div>
+
+									{/* Floating Comments Button - bottom-right absolute */}
+									<Button
+										size="icon"
+										onClick={() => setShowMobileComments(true)}
+										className="absolute right-4 bottom-4 h-14 w-14 rounded-full shadow-lg"
+										title={`Open comments (${threads.length})`}
+									>
+										<MessageSquare className="h-6 w-6" />
+									</Button>
+
+									{/* Comments Sheet (Right Drawer) */}
+									<Sheet
+										open={showMobileComments}
+										onOpenChange={setShowMobileComments}
+									>
+										<SheetContent
+											side="right"
+											className="flex min-h-0 flex-col p-0 w-full sm:max-w-md"
+										>
+											<SheetHeader className="border-b border-slate-200 px-4 py-3 dark:border-border">
+												<SheetTitle className="flex items-center gap-2">
+													<MessageSquare className="h-4 w-4" />
+													Comments ({threads.length})
+												</SheetTitle>
+											</SheetHeader>
+											<ScrollArea className="min-h-0 flex-1">
+												<div className="space-y-3 p-4">
+													{threads.length > 0 ? (
+														threads.map((thread) => (
+															<CommentThreadComponent
+																key={thread.id}
+																thread={thread}
+																onAddReply={handleAddReply}
+																onDeleteComment={deleteComment}
+																onResolveThread={resolveThread}
+																onUnresolveThread={unresolveThread}
+																onReact={addReaction}
+															/>
+														))
+													) : (
+														<div className="py-8 text-center">
+															<MessageSquare className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-muted" />
+															<p className="text-sm text-slate-500 dark:text-muted-foreground">
+																No comments yet
+															</p>
+														</div>
+													)}
+												</div>
+											</ScrollArea>
+										</SheetContent>
+									</Sheet>
+								</div>
+							) : (
+								/* Mobile: Tabs for Files and AI Insights */
+								<Tabs
+									defaultValue="files"
+									className="flex min-h-0 flex-1 flex-col"
+								>
+									<div className="border-b border-slate-200 bg-white dark:border-border dark:bg-card px-3 py-2">
+										<TabsList className="grid w-full grid-cols-2 bg-transparent">
+											<TabsTrigger value="files" className="text-xs sm:text-sm">
+												Files ({pullRequest.files.length})
+											</TabsTrigger>
+											<TabsTrigger
+												value="insights"
+												className="gap-1 text-xs sm:text-sm"
+											>
+												<Sparkles className="h-3.5 w-3.5" />
+												<span className="hidden sm:inline">Insights</span>
+											</TabsTrigger>
+										</TabsList>
+									</div>
+
+									<TabsContent value="files" className="m-0 min-h-0 flex-1">
+										<FileTree
+											files={pullRequest.files}
+											selectedFile={selectedFile}
+											onFileSelect={handleFileSelect}
+										/>
+									</TabsContent>
+
+									<TabsContent value="insights" className="m-0 min-h-0 flex-1">
+										<AIInsightsPanel
+											insights={pullRequest.aiInsights}
+											summary={pullRequest.aiSummary}
+										/>
+									</TabsContent>
+								</Tabs>
+							)}
 						</div>
 					</TabsContent>
 
+					{/* ========== CONVERSATION TAB ========== */}
 					<TabsContent
 						value="conversation"
-						className="flex-1 m-0 p-3 sm:p-6 overflow-auto"
+						className="m-0 min-h-0 flex-1 overflow-auto"
 					>
-						<div className="max-w-4xl mx-auto">
-							<h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-foreground mb-4">
+						<div className="mx-auto max-w-4xl p-3 sm:p-6">
+							<h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-foreground sm:text-lg">
 								Conversation
 							</h3>
-							<p className="text-sm sm:text-base text-slate-600 dark:text-muted-foreground">
+							<p className="text-sm text-slate-600 dark:text-muted-foreground sm:text-base">
 								Conversation view coming soon...
 							</p>
 						</div>
 					</TabsContent>
 
+					{/* ========== COMMITS TAB ========== */}
 					<TabsContent
 						value="commits"
-						className="flex-1 m-0 p-3 sm:p-6 overflow-auto"
+						className="m-0 min-h-0 flex-1 overflow-auto"
 					>
-						<div className="max-w-4xl mx-auto">
-							<h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-foreground mb-4">
+						<div className="mx-auto max-w-4xl p-3 sm:p-6">
+							<h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-foreground sm:text-lg">
 								Commits ({pullRequest.commits})
 							</h3>
-							<p className="text-sm sm:text-base text-slate-600 dark:text-muted-foreground">
+							<p className="text-sm text-slate-600 dark:text-muted-foreground sm:text-base">
 								Commits view coming soon...
 							</p>
 						</div>

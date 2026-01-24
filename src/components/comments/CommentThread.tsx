@@ -7,8 +7,8 @@ import {
 	ChevronUp,
 } from "lucide-react";
 import { type CommentThread as CommentThreadType } from "@/types";
-import  CommentItem  from "./CommentItem";
-import  CommentForm  from "./CommentForm";
+import CommentItem from "./CommentItem";
+import CommentForm from "./CommentForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 interface CommentThreadProps {
 	thread: CommentThreadType;
 	onAddReply: (threadId: number, content: string) => void;
-	onEditComment: (commentId: number, content: string) => void;
 	onDeleteComment: (commentId: number) => void;
 	onResolveThread: (threadId: number) => void;
 	onUnresolveThread: (threadId: number) => void;
@@ -26,7 +25,6 @@ interface CommentThreadProps {
 export const CommentThread = ({
 	thread,
 	onAddReply,
-	onEditComment,
 	onDeleteComment,
 	onResolveThread,
 	onUnresolveThread,
