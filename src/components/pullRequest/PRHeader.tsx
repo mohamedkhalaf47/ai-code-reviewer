@@ -41,7 +41,7 @@ const PRHeader = ({ pr, activeUsers }: PRHeaderProps) => {
 	};
 
 	return (
-		<header className="sticky top-14 md:top-16 z-40 bg-white dark:bg-card border-b dark:border-border">
+		<header className="bg-white dark:bg-card border-b dark:border-border">
 			<div className="px-3 sm:px-4 md:px-6 py-3 md:py-4">
 				{/* Back Button */}
 				<Link

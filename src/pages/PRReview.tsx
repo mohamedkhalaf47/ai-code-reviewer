@@ -23,6 +23,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockCollaboratingUsers } from "@/mocks/data/users";
 import { Sparkles, MessageSquare, ArrowLeft } from "lucide-react";
+import ActivityTimeline from "@/components/pullRequest/ActivityTimeline";
+import CommitsList from "@/components/pullRequest/CommitsList";
 
 const PRReview = () => {
 	const { number } = useParams<{ number: string }>();
@@ -86,14 +88,6 @@ const PRReview = () => {
 		setShowComments(false);
 	};
 
-	// ============================================================================
-	// LAYOUT STRUCTURE
-	// ============================================================================
-	// This is the ONLY place where layout is controlled.
-	// - Desktop (lg+): Two-column (no file) or three-column (with file)
-	// - Mobile (<lg): Tabs (no file) or full-screen editor with floating buttons
-	// ============================================================================
-
 	return (
 		<div className="flex h-screen flex-col bg-white dark:bg-background">
 			{/* Header */}
@@ -106,7 +100,6 @@ const PRReview = () => {
 					<PRStats pr={pullRequest} />
 				</div>
 
-				{/* Content Tabs - SINGLE OVERFLOW OWNER */}
 				<Tabs defaultValue="files" className="flex min-h-0 flex-1 flex-col">
 					{/* Tabs Navigation */}
 					<div className="border-b border-slate-200 bg-white px-3 dark:border-border dark:bg-card sm:px-4">
@@ -185,10 +178,13 @@ const PRReview = () => {
 															/>
 														))
 													) : (
-														<div className="py-8 text-center">
-															<MessageSquare className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-muted" />
+														<div className="text-center py-8">
+															<MessageSquare className="w-12 h-12 text-slate-300 dark:text-muted mx-auto mb-3" />
 															<p className="text-sm text-slate-500 dark:text-muted-foreground">
 																No comments yet
+															</p>
+															<p className="text-xs text-slate-400 dark:text-muted-foreground mt-1">
+																Click on line numbers to add comments
 															</p>
 														</div>
 													)}
@@ -250,7 +246,7 @@ const PRReview = () => {
 									<Button
 										size="icon"
 										onClick={() => setShowMobileComments(true)}
-										className="absolute right-4 bottom-4 h-14 w-14 rounded-full shadow-lg"
+										className="absolute right-4 bottom-4 h-13 w-13 rounded-full shadow-lg z-10"
 										title={`Open comments (${threads.length})`}
 									>
 										<MessageSquare className="h-6 w-6" />
@@ -339,32 +335,32 @@ const PRReview = () => {
 					</TabsContent>
 
 					{/* ========== CONVERSATION TAB ========== */}
-					<TabsContent
-						value="conversation"
-						className="m-0 min-h-0 flex-1 overflow-auto"
-					>
-						<div className="mx-auto max-w-4xl p-3 sm:p-6">
-							<h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-foreground sm:text-lg">
-								Conversation
-							</h3>
-							<p className="text-sm text-slate-600 dark:text-muted-foreground sm:text-base">
-								Conversation view coming soon...
-							</p>
+					<TabsContent value="conversation" className="flex-1 m-0">
+						<div className="max-w-4xl mx-auto p-3 sm:p-6">
+							<div className="mb-4 sm:mb-6">
+								<h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-foreground mb-1">
+									Conversation
+								</h3>
+								<p className="text-xs sm:text-sm text-slate-600 dark:text-muted-foreground">
+									Activity timeline for this pull request
+								</p>
+							</div>
+							<ActivityTimeline pullRequest={pullRequest} />
 						</div>
 					</TabsContent>
 
 					{/* ========== COMMITS TAB ========== */}
-					<TabsContent
-						value="commits"
-						className="m-0 min-h-0 flex-1 overflow-auto"
-					>
-						<div className="mx-auto max-w-4xl p-3 sm:p-6">
-							<h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-foreground sm:text-lg">
-								Commits ({pullRequest.commits})
-							</h3>
-							<p className="text-sm text-slate-600 dark:text-muted-foreground sm:text-base">
-								Commits view coming soon...
-							</p>
+					<TabsContent value="commits" className="flex-1 m-0">
+						<div className="max-w-4xl mx-auto p-3 sm:p-6">
+							<div className="mb-4 sm:mb-6">
+								<h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-foreground mb-1">
+									Commits
+								</h3>
+								<p className="text-xs sm:text-sm text-slate-600 dark:text-muted-foreground">
+									{pullRequest.commits} commits in this pull request
+								</p>
+							</div>
+							<CommitsList pullRequest={pullRequest} />
 						</div>
 					</TabsContent>
 				</Tabs>
