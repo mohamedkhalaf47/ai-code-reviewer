@@ -1,26 +1,33 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { DiffEditor, type DiffOnMount } from "@monaco-editor/react";
 import { type FileChange } from "@/types";
 import type * as monacoEditor from "monaco-editor";
+import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+import { Download, Maximize2, Minimize2 } from "lucide-react";
 
 interface MonacoDiffViewerProps {
 	file: FileChange;
 	isDarkMode?: boolean;
 }
 
-/**
- * MonacoDiffViewer: Pure diff editor renderer.
- *
- * Responsibility: Render ONLY the Monaco diff editor canvas.
- * No header, no view mode toggle, no fullscreen handling.
- * Parent (EnhancedCodeViewer via PRReview) controls layout and sizing.
- */
 const MonacoDiffViewer = ({
 	file,
 	isDarkMode = false,
 }: MonacoDiffViewerProps) => {
 	const diffEditorRef =
 		useRef<monacoEditor.editor.IStandaloneDiffEditor | null>(null);
+	const [isFullscreen, setIsFullscreen] = useState(false);
+
+	const downloadFile = () => {
+		const blob = new Blob([file.patch || ""], { type: "text/plain" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = file.name;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
 
 	// Parse diff to get original and modified content
 	const parseDiff = () => {
@@ -106,26 +113,60 @@ const MonacoDiffViewer = ({
 	};
 
 	return (
-		<DiffEditor
-			height="100%"
-			width="100%"
-			language={getLanguage(file.name)}
-			original={original}
-			modified={modified}
-			theme={isDarkMode ? "vs-dark" : "vs-light"}
-			onMount={handleDiffEditorDidMount}
-			options={{
-				automaticLayout: true,
-				renderSideBySide: true,
-			}}
-			loading={
-				<div className="flex items-center justify-center h-full">
-					<div className="text-sm text-slate-500 dark:text-muted-foreground">
-						Loading diff viewer...
-					</div>
-				</div>
-			}
-		/>
+		<div
+			className={cn(
+				"h-full min-h-0 flex flex-col bg-white dark:bg-card",
+				isFullscreen && "fixed inset-0 z-50",
+			)}
+		>
+			{/* Header */}
+			<div className="h-10 px-2 flex items-center gap-1 border-b bg-white dark:bg-card">
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={downloadFile}
+					title="Download file"
+				>
+					<Download className="w-4 h-4" />
+				</Button>
+
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={() => setIsFullscreen((v) => !v)}
+					title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+				>
+					{isFullscreen ? (
+						<Minimize2 className="w-4 h-4" />
+					) : (
+						<Maximize2 className="w-4 h-4" />
+					)}
+				</Button>
+			</div>
+
+			{/* Monaco */}
+			<div className="flex-1 min-h-0">
+				<DiffEditor
+					height="100vh"
+					language={getLanguage(file.name)}
+					original={original}
+					modified={modified}
+					theme={isDarkMode ? "vs-dark" : "vs-light"}
+					onMount={handleDiffEditorDidMount}
+					options={{
+						automaticLayout: true,
+						renderSideBySide: true,
+					}}
+					loading={
+						<div className="flex items-center justify-center h-full">
+							<div className="text-sm text-slate-500 dark:text-muted-foreground">
+								Loading diff viewer...
+							</div>
+						</div>
+					}
+				/>
+			</div>
+		</div>
 	);
 };
 
