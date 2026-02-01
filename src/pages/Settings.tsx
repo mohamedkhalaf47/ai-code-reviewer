@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ const Settings = () => {
 	const {
 		register,
 		handleSubmit,
-		watch,
+		control,
 		formState: { errors, isSubmitting },
 		reset,
 	} = useForm<SettingsFormData>({
@@ -54,7 +54,7 @@ const Settings = () => {
 		},
 	});
 
-	const password = watch("password") || "";
+	const password = useWatch({ control, name: "password", defaultValue: "" }) || "";
 
 	const onSubmit = async (data: SettingsFormData) => {
 		// Validate password confirmation
