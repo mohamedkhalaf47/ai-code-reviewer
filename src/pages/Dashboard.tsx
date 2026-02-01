@@ -3,6 +3,7 @@ import EmptyState from "@/components/common/EmptyState";
 import { GitPullRequest } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
+import { Link } from "react-router-dom";
 
 const Dashboard = () => {
 	const { pullRequests, loading, error } = usePullRequests();
@@ -42,38 +43,37 @@ const Dashboard = () => {
 
 			<div className="grid gap-4">
 				{pullRequests.map((pr) => (
-					<div
-						key={pr.id}
-						className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-primary/5 transition-all card-elevated"
-					>
-						<div className="flex items-start justify-between gap-4">
-							<div className="flex-1">
-								<h3 className="font-semibold dark:text-foreground mb-1">
-									{pr.title}
-								</h3>
-								<div className="flex items-center gap-3 text-sm text-slate-600 dark:text-muted-foreground">
-									<span>#{pr.number}</span>
-									<span>•</span>
-									<span>by {pr.author.name}</span>
-									<span>•</span>
-									<span>{pr.changedFiles} files</span>
-									<span>•</span>
-									<span className="text-green-600">+{pr.additions}</span>
-									<span className="text-red-600">-{pr.deletions}</span>
+					<Link to={`/pr/${pr.number}`} key={pr.id}>
+						<div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-primary/5 transition-all card-elevated">
+							<div className="flex items-start justify-between gap-4">
+								<div className="flex-1">
+									<h3 className="font-semibold dark:text-foreground mb-1">
+										{pr.title}
+									</h3>
+									<div className="flex items-center gap-3 text-sm text-slate-600 dark:text-muted-foreground">
+										<span>#{pr.number}</span>
+										<span>•</span>
+										<span>by {pr.author.name}</span>
+										<span>•</span>
+										<span>{pr.changedFiles} files</span>
+										<span>•</span>
+										<span className="text-green-600">+{pr.additions}</span>
+										<span className="text-red-600">-{pr.deletions}</span>
+									</div>
+								</div>
+								<div className="flex flex-col items-end gap-2">
+									<span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border dark:border-green-500/30">
+										{pr.status}
+									</span>
+									{pr.aiInsights.length > 0 && (
+										<span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border dark:border-red-500/30">
+											{pr.aiInsights.length} issues
+										</span>
+									)}
 								</div>
 							</div>
-							<div className="flex flex-col items-end gap-2">
-								<span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border dark:border-green-500/30">
-									{pr.status}
-								</span>
-								{pr.aiInsights.length > 0 && (
-									<span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border dark:border-red-500/30">
-										{pr.aiInsights.length} issues
-									</span>
-								)}
-							</div>
 						</div>
-					</div>
+					</Link>
 				))}
 			</div>
 		</div>

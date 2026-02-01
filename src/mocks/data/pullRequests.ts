@@ -164,12 +164,80 @@ Adds database indexes to improve query performance on high-traffic tables.
 		files: [],
 		commentThreads: [],
 		aiInsights: [],
-		reviewers: [],
+		reviewers: [mockUsers[4]], // User 5 is now a reviewer
 		additions: 45,
 		deletions: 8,
 		changedFiles: 4,
 		commits: 3,
 		labels: ["database", "performance"],
+	},
+	{
+		id: 6,
+		number: 137,
+		title: "Add multi-language support to the UI",
+		description: `## Summary
+Implements internationalization (i18n) for the application with support for multiple languages.
+
+## Changes
+- Added i18n library integration
+- Created translation files for English and Spanish
+- Implemented language switcher component
+- Added locale persistence
+
+## Testing
+- All UI components tested in multiple languages
+- RTL layout support verified`,
+		author: mockUsers[4], // User 5 is the author
+		status: "open",
+		reviewStatus: "pending",
+		sourceBranch: "feature/multi-language",
+		targetBranch: "develop",
+		repository: "company/frontend-app",
+		createdAt: new Date("2024-01-19T09:00:00"),
+		updatedAt: new Date("2024-01-20T14:00:00"),
+		files: [],
+		commentThreads: [],
+		aiInsights: [],
+		reviewers: [mockUsers[1], mockUsers[2]],
+		additions: 523,
+		deletions: 89,
+		changedFiles: 28,
+		commits: 12,
+		labels: ["frontend", "i18n", "feature"],
+	},
+	{
+		id: 7,
+		number: 136,
+		title: "Implement user activity logging system",
+		description: `## Summary
+Creates a comprehensive activity logging system to track user actions for audit purposes.
+
+## Changes
+- Added activity logger middleware
+- Created audit trail database schema
+- Implemented activity viewer component
+- Added filtering and search capabilities
+
+## Security
+- GDPR compliant data retention policy
+- User data encryption at rest`,
+		author: mockUsers[4], // User 5 is the author
+		status: "merged",
+		reviewStatus: "approved",
+		sourceBranch: "feature/activity-logging",
+		targetBranch: "main",
+		repository: "company/backend-api",
+		createdAt: new Date("2024-01-18T10:00:00"),
+		updatedAt: new Date("2024-01-19T15:00:00"),
+		files: [],
+		commentThreads: [],
+		aiInsights: [],
+		reviewers: [mockUsers[3], mockUsers[0]],
+		additions: 412,
+		deletions: 45,
+		changedFiles: 19,
+		commits: 9,
+		labels: ["backend", "security", "feature"],
 	},
 ];
 

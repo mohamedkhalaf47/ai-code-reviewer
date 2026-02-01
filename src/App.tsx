@@ -4,13 +4,14 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import PRReview from "./pages/PRReview";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 // Components
 import Layout from "./components/layout/Layout";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./components/theme/theme-provider";
-
 
 function App() {
 	return (
@@ -40,6 +41,12 @@ function App() {
 								</Layout>
 							}
 						/>
+
+						{/* Profile Page */}
+						<Route path="/profile" element={<Profile />} />
+
+						{/* Settings Page */}
+						<Route path="/settings" element={<Settings />} />
 
 						{/* Catch all - 404 */}
 						<Route path="*" element={<NotFound />} />
